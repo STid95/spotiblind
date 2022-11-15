@@ -64,21 +64,14 @@ class _HomeState extends State<Home> {
             ? 'connect to spotify successful'
             : 'connect to spotify failed');
       }
-
-      setState(() {
-        _loading = false;
-      });
     } on PlatformException catch (e) {
-      setState(() {
-        _loading = false;
-      });
       setStatus(e.code, message: e.message);
     } on MissingPluginException {
-      setState(() {
-        _loading = false;
-      });
       setStatus('not implemented');
     }
+    setState(() {
+      _loading = false;
+    });
     Get.snackbar("Résultat", text, snackPosition: SnackPosition.BOTTOM);
   }
 
@@ -92,16 +85,13 @@ class _HomeState extends State<Home> {
         setStatus("Something went wrong");
       }
     } on PlatformException catch (e) {
-      setState(() {
-        _loading = false;
-      });
       setStatus(e.code, message: e.message);
     } on MissingPluginException {
-      setState(() {
-        _loading = false;
-      });
       setStatus('not implemented');
     }
+    setState(() {
+      _loading = false;
+    });
     Get.snackbar("Résultat", text, snackPosition: SnackPosition.BOTTOM);
   }
 
