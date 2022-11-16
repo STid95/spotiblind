@@ -1,32 +1,39 @@
 import 'package:get/get.dart';
 import 'package:spotiblind/services/dio_client.dart';
+import 'package:spotify_sdk/spotify_sdk.dart';
 
-import '../models/user.dart';
 import 'cache_manager.dart';
 
 class AuthenticationManager extends GetxController with CacheManager {
   final isLogged = false.obs;
-  var user = User(id: '', images: [], displayName: '').obs;
 
   void logOut() {
     isLogged.value = false;
     removeToken();
-    user.value = User(id: '', images: [], displayName: '');
   }
 
   void login(String? token) async {
     await saveToken(token);
-    final client = await DioClient.init();
-    user.value = await client.getCurrentUser() as User;
     isLogged.value = true;
   }
 
   void checkLoginStatus() async {
-    final token = getToken();
+    final token =
+        getToken(); //Check if there's a token stocked, which means Spotify is linked
     if (token != null) {
-      isLogged.value = true;
+      SpotifySdk.connectToSpotifyRemote(
+          clientId: "13f262e800754d799ad89db47aaf5d3d",
+          redirectUrl: "https://www.google.fr",
+          accessToken: token);
+      await saveToken(await SpotifySdk.getAccessToken(
+          clientId: "13f262e800754d799ad89db47aaf5d3d",
+          redirectUrl: "https://www.google.fr")); //refresh Token
       final client = await DioClient.init();
-      user.value = await client.getCurrentUser() as User;
+      print(client.accessToken);
+      final spotifyUser = await client.getCurrentUser();
+      if (spotifyUser != null) {
+        isLogged.value = true;
+      }
     }
   }
 }

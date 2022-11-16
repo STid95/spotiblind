@@ -4,7 +4,7 @@ import 'user.image.dart';
 
 class User extends GetxController {
   String id;
-  List<UserImage> images;
+  List<SpotifyImage> images;
   String displayName;
   User({
     required this.id,
@@ -15,8 +15,8 @@ class User extends GetxController {
   factory User.fromJson(Map<String, dynamic> map) {
     return User(
       id: map['id'] ?? '',
-      images: List<UserImage>.from(
-          map['images']?.map((x) => UserImage.fromJson(x))),
+      images: List<SpotifyImage>.from(
+          map['images']?.map((x) => SpotifyImage.fromJson(x))),
       displayName: map['display_name'] ?? '',
     );
   }
