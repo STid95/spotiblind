@@ -84,9 +84,8 @@ class DioClient {
           }));
       List<dynamic> items = userData.data['tracks']['items'];
       tracks = items.map((e) => Track.fromJson(e['track'])).toList();
-      print(tracks);
       Get.put(tracks.where((element) => element.previewUrl != '').toList(),
-          tag: "tracks");
+          tag: playlistId);
     } catch (e) {
       print(e);
     }

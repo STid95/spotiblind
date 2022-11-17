@@ -12,9 +12,25 @@ class AuthenticationManager extends GetxController with CacheManager {
     removeToken();
   }
 
-  void login(String? token) async {
-    await saveToken(token);
-    isLogged.value = true;
+  Future login() async {
+    String? token = getToken();
+    final connect = await SpotifySdk.connectToSpotifyRemote(
+        clientId: "13f262e800754d799ad89db47aaf5d3d",
+        redirectUrl: "https://www.google.fr",
+        accessToken: token);
+    if (connect && token == null) {
+      var token = await SpotifySdk.getAccessToken(
+          clientId: "13f262e800754d799ad89db47aaf5d3d",
+          redirectUrl: "https://www.google.fr");
+      if (token != '') {
+        await saveToken(token);
+        DioClient client = await DioClient.init();
+        final spotifyUser = await client.getCurrentUser();
+        if (spotifyUser != null) {
+          isLogged.value = true;
+        }
+      }
+    }
   }
 
   void checkLoginStatus() async {
@@ -29,7 +45,6 @@ class AuthenticationManager extends GetxController with CacheManager {
           clientId: "13f262e800754d799ad89db47aaf5d3d",
           redirectUrl: "https://www.google.fr")); //refresh Token
       final client = await DioClient.init();
-      print(client.accessToken);
       final spotifyUser = await client.getCurrentUser();
       if (spotifyUser != null) {
         isLogged.value = true;

@@ -14,38 +14,42 @@ class UserInfos extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final AuthenticationManager authManager = Get.find();
-
-    User? user;
-    if (authManager.isLogged.value) {
-      User currentUser = Get.find(tag: "currentUser");
-      user = currentUser;
-    }
-    return SizedBox(
-      width: 300,
-      height: 300,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          CircleAvatar(
-            radius: 80,
-            backgroundImage:
-                user != null ? NetworkImage(user.images.first.url) : null,
-            child: user != null ? null : const Icon(Icons.question_mark),
-          ),
-          Text(user != null
-              ? user.displayName
-              : "Connectez-vous pour continuer"),
-          if (user != null)
-            TextButton(
-                onPressed: (() async {
-                  DioClient client = Get.find();
-                  await client.getPlaylists();
-                  Get.to(() => const PlaylistPage());
-                }),
-                child: const Text("Récupérer mes playlists"))
-        ],
-      ),
-    );
+    return Obx((() {
+      final AuthenticationManager authManager = Get.find();
+      final logged = authManager.isLogged.value;
+      User? user;
+      if (logged) {
+        User currentUser = Get.find(tag: "currentUser");
+        user = currentUser;
+      } else {
+        user = null;
+      }
+      return SizedBox(
+        width: 300,
+        height: 300,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            CircleAvatar(
+              radius: 80,
+              backgroundImage:
+                  user != null ? NetworkImage(user.images.first.url) : null,
+              child: user != null ? null : const Icon(Icons.question_mark),
+            ),
+            Text(user != null
+                ? user.displayName
+                : "Connectez-vous pour continuer"),
+            if (user != null)
+              TextButton(
+                  onPressed: (() async {
+                    DioClient client = Get.find();
+                    await client.getPlaylists();
+                    Get.to(() => const PlaylistPage());
+                  }),
+                  child: const Text("Récupérer mes playlists"))
+          ],
+        ),
+      );
+    }));
   }
 }

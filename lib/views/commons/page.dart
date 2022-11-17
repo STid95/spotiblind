@@ -1,76 +1,51 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/src/widgets/container.dart';
-import 'package:flutter/src/widgets/framework.dart';
 import 'package:get/get.dart';
 import 'package:spotify_sdk/spotify_sdk.dart';
 
 import '../../services/auth_manager.dart';
 import '../home/home.dart';
 
-class GenPage extends StatefulWidget {
-  final Widget child;
-  const GenPage({
+class GenAppBar extends StatefulWidget with PreferredSizeWidget {
+  const GenAppBar({
     Key? key,
-    required this.child,
   }) : super(key: key);
 
   @override
-  State<GenPage> createState() => _GenPageState();
+  State<GenAppBar> createState() => _GenAppBarState();
+
+  @override
+  Size get preferredSize => const Size(10, 50);
 }
 
-class _GenPageState extends State<GenPage> {
+class _GenAppBarState extends State<GenAppBar> {
   final AuthenticationManager _authManager = Get.find();
   String text = '';
-  bool _loading = false;
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-        child: Scaffold(
-            appBar: AppBar(
-                leading: IconButton(
-                    onPressed: _authManager.isLogged.value
-                        ? () => disconnectSpotify()
-                        : () => connectToSpotifyRemote(),
-                    icon: Icon(_authManager.isLogged.value
-                        ? Icons.logout
-                        : Icons.login))),
-            body: _loading ? const CircularProgressIndicator() : widget.child));
+    return AppBar(
+        leading: IconButton(
+            onPressed: _authManager.isLogged.value
+                ? () => disconnectSpotify()
+                : () => connectToSpotifyRemote(),
+            icon: Icon(
+                _authManager.isLogged.value ? Icons.logout : Icons.login)));
   }
 
   Future<void> connectToSpotifyRemote() async {
     try {
-      setState(() {
-        _loading = true;
-      });
-      String? token = _authManager.getToken();
-      final connect = await SpotifySdk.connectToSpotifyRemote(
-          clientId: "13f262e800754d799ad89db47aaf5d3d",
-          redirectUrl: "https://www.google.fr",
-          accessToken: token);
-      if (connect && token == null) {
-        var token = await SpotifySdk.getAccessToken(
-            clientId: "13f262e800754d799ad89db47aaf5d3d",
-            redirectUrl: "https://www.google.fr");
-        if (token != '') {
-          setStatus('connect to spotify successful');
-          _authManager.login(token);
-        } else {
-          setStatus('connect to spotify failed');
-        }
+      await _authManager.login();
+      if (_authManager.isLogged.value) {
+        setStatus('connect to spotify successful');
       } else {
-        setStatus(connect
-            ? 'connect to spotify successful'
-            : 'connect to spotify failed');
+        setStatus('connect to spotify failed');
       }
     } on PlatformException catch (e) {
       setStatus(e.code, message: e.message);
     } on MissingPluginException {
       setStatus('not implemented');
     }
-    setState(() {
-      _loading = false;
-    });
+
     Get.snackbar("Résultat", text, snackPosition: SnackPosition.BOTTOM);
   }
 
@@ -88,10 +63,10 @@ class _GenPageState extends State<GenPage> {
     } on MissingPluginException {
       setStatus('not implemented');
     }
-    setState(() {
-      _loading = false;
-    });
-    Get.to(() => const Home());
+
+    if (Get.currentRoute != "/Home") {
+      Get.off(const Home());
+    }
     Get.snackbar("Résultat", text, snackPosition: SnackPosition.BOTTOM);
   }
 

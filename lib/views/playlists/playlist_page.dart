@@ -35,18 +35,20 @@ class _PlaylistPageState extends State<PlaylistPage> {
 
   @override
   Widget build(BuildContext context) {
-    return GenPage(
-        child:
+    return Scaffold(
+        appBar: const GenAppBar(),
+        body:
             Column(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-      const Text("Choisir une playlist"),
-      RefreshIndicator(
-        onRefresh: () => getFuturePlaylists(),
-        child: SizedBox(
-          height: MediaQuery.of(context).size.height * 0.8,
-          child: PlaylistGrid(controller: _controller, playlists: playlists),
-        ),
-      ),
-    ]));
+          const Text("Choisir une playlist"),
+          RefreshIndicator(
+            onRefresh: () => getFuturePlaylists(),
+            child: SizedBox(
+              height: MediaQuery.of(context).size.height * 0.8,
+              child:
+                  PlaylistGrid(controller: _controller, playlists: playlists),
+            ),
+          ),
+        ]));
   }
 
   Future<void> getFuturePlaylists() {

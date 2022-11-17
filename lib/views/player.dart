@@ -1,39 +1,60 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
 import 'package:spotiblind/views/commons/page.dart';
 
 import '../models/track.dart';
 
 class Player extends StatefulWidget {
-  const Player({super.key});
+  final String playlistId;
+  const Player({
+    Key? key,
+    required this.playlistId,
+  }) : super(key: key);
 
   @override
   State<Player> createState() => _PlayerState();
 }
 
 class _PlayerState extends State<Player> {
-  List<Track> tracks = Get.find(tag: "tracks");
+  bool isPlaying = false;
   final player = AudioPlayer();
 
-  @override
-  void initState() {
-    setTrack();
-    super.initState();
+  void setTrack(List<Track> trackList) async {
+    await player.setSourceUrl(trackList.first.previewUrl);
   }
 
-  void setTrack() async {
-    await player.setSourceUrl(tracks.first.previewUrl);
+  @override
+  void dispose() {
+    player.dispose();
+    Get.delete(tag: widget.playlistId, force: true);
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return GenPage(
-        child: SizedBox(
-      width: 300,
-      height: 300,
-      child: IconButton(
-          icon: const Icon(Icons.play_arrow), onPressed: () => player.resume()),
-    ));
+    setTrack(Get.find(tag: widget.playlistId));
+
+    return SafeArea(
+      child: Scaffold(
+          appBar: const GenAppBar(),
+          body: SizedBox(
+            width: 300,
+            height: 300,
+            child: Row(
+              children: [
+                IconButton(
+                    icon: Icon(isPlaying ? Icons.stop : Icons.play_arrow),
+                    onPressed: () {
+                      isPlaying ? player.pause() : player.resume();
+                      setState(() {
+                        isPlaying = !isPlaying;
+                      });
+                    })
+              ],
+            ),
+          )),
+    );
   }
 }
