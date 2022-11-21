@@ -1,16 +1,19 @@
+import 'package:get/get_state_manager/get_state_manager.dart';
+import 'package:spotiblind/models/track.dart';
 import 'package:spotiblind/models/user.image.dart';
 
-class Playlist {
+class Playlist extends GetxController {
   String href;
   String id;
   List<SpotifyImage> images;
   String name;
-  Playlist({
-    required this.href,
-    required this.id,
-    required this.images,
-    required this.name,
-  });
+  List<Track> tracks;
+  Playlist(
+      {required this.href,
+      required this.id,
+      required this.images,
+      required this.name,
+      this.tracks = const []});
 
   factory Playlist.fromJson(Map<String, dynamic> map) {
     return Playlist(
@@ -20,5 +23,9 @@ class Playlist {
           map['images']?.map((x) => SpotifyImage.fromJson(x))),
       name: map['name'] ?? '',
     );
+  }
+
+  void deleteTrack(String id) {
+    tracks.removeWhere((element) => element.id == id);
   }
 }

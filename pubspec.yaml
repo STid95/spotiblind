@@ -38,10 +38,9 @@ dependencies:
   cupertino_icons: ^1.0.2
   spotify_sdk: ^2.3.0
   dio: ^4.0.6
-  flutter_secure_storage: ^6.0.0
   get: ^4.6.5
   get_storage: ^2.0.3
-  audioplayers: ^1.1.1
+  just_audio: ^0.9.30
 
 dev_dependencies:
   flutter_test:

@@ -73,19 +73,19 @@ class DioClient {
     return [];
   }
 
-  Future getPlaylistTracks(String playlistId) async {
+  Future getPlaylistTracks(Playlist playlist) async {
     List<Track> tracks = [];
     try {
       dio.Response userData = await _dio.get(
-          '$_baseUrl/playlists/$playlistId?market=FR',
+          '$_baseUrl/playlists/${playlist.id}?market=FR',
           options: dio.Options(headers: {
             'Authorization': 'Bearer $accessToken',
             'Content-Type': 'application/json'
           }));
       List<dynamic> items = userData.data['tracks']['items'];
       tracks = items.map((e) => Track.fromJson(e['track'])).toList();
-      Get.put(tracks.where((element) => element.previewUrl != '').toList(),
-          tag: playlistId);
+      playlist.tracks = tracks;
+      Get.put(playlist, tag: playlist.id);
     } catch (e) {
       print(e);
     }

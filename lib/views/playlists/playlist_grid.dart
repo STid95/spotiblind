@@ -27,7 +27,7 @@ class PlaylistGrid extends StatelessWidget {
         children: playlists
             .map((e) => GestureDetector(
                   onTap: () async {
-                    await client.getPlaylistTracks(e.id);
+                    await client.getPlaylistTracks(e);
                     Get.to(() => Player(
                           playlistId: e.id,
                         ));

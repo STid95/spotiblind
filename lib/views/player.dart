@@ -1,10 +1,11 @@
-import 'package:audioplayers/audioplayers.dart';
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:just_audio/just_audio.dart';
+import 'package:spotiblind/models/playlist.dart';
 
 import 'package:spotiblind/views/commons/page.dart';
-
-import '../models/track.dart';
 
 class Player extends StatefulWidget {
   final String playlistId;
@@ -22,22 +23,48 @@ class _PlayerState extends State<Player> {
   final player = AudioPlayer();
   Duration? duration;
   Duration currentPosition = const Duration(seconds: 0);
+  int track = 0;
+  late Playlist playlist;
+  late StreamSubscription<Duration> subscription;
 
-  void setTrack(List<Track> trackList) async {
-    await player.setSourceUrl(trackList.first.previewUrl);
+  void setPlaylist() async {
+    final tracklist = ConcatenatingAudioSource(
+        useLazyPreparation: true,
+        shuffleOrder: DefaultShuffleOrder(),
+        children: playlist.tracks
+            .map((e) => (AudioSource.uri(Uri.parse(e.previewUrl))))
+            .toList());
+    await player.setAudioSource(tracklist,
+        initialIndex: 0, initialPosition: Duration.zero);
+  }
+
+  @override
+  void initState() {
+    playlist = Get.find(tag: widget.playlistId);
+    setPlaylist();
+    super.initState();
   }
 
   void setDuration() async {
-    duration = await player.getDuration();
-    player.onPositionChanged.listen((event) {
-      currentPosition = event;
-      print(currentPosition.inSeconds);
+    player.durationStream.listen((trackDuration) {
+      duration = trackDuration;
+      if (mounted) {
+        setState(() {});
+      }
     });
+    subscription = player.positionStream.listen((position) {
+      currentPosition = position;
+      if (mounted) {
+        setState(() {});
+      }
+    });
+
     setState(() {});
   }
 
   @override
   void dispose() {
+    subscription.cancel();
     player.dispose();
     Get.delete(tag: widget.playlistId, force: true);
     super.dispose();
@@ -45,7 +72,7 @@ class _PlayerState extends State<Player> {
 
   @override
   Widget build(BuildContext context) {
-    setTrack(Get.find(tag: widget.playlistId));
+    isPlaying = player.playing;
     setDuration();
 
     return SafeArea(
@@ -54,30 +81,42 @@ class _PlayerState extends State<Player> {
           body: SizedBox(
             width: 300,
             height: 300,
-            child: Row(
+            child: Column(
               children: [
-                IconButton(
-                    iconSize: 50,
-                    icon: Icon(isPlaying ? Icons.stop : Icons.play_arrow),
-                    onPressed: () {
-                      isPlaying ? player.pause() : player.resume();
-                      setState(() {
-                        isPlaying = !isPlaying;
-                      });
-                    }),
-                if (duration != null)
-                  SizedBox(
-                    width: 150,
-                    child: LinearProgressIndicator(
-                        backgroundColor: Colors.cyanAccent,
-                        valueColor:
-                            const AlwaysStoppedAnimation<Color>(Colors.red),
-                        value: currentPosition.inSeconds.toDouble() /
-                            duration!.inSeconds.toDouble()),
-                  ),
-                if (duration != null && duration != const Duration())
-                  Text(
-                      "0:${currentPosition.inSeconds.toString()}/0:${duration!.inSeconds.toString()}")
+                Row(
+                  children: [
+                    IconButton(
+                        iconSize: 50,
+                        icon: Icon(isPlaying ? Icons.stop : Icons.play_arrow),
+                        onPressed: () {
+                          isPlaying ? player.pause() : player.play();
+                          setState(() {
+                            isPlaying = !isPlaying;
+                          });
+                        }),
+                    SizedBox(
+                      width: 150,
+                      child: LinearProgressIndicator(
+                          backgroundColor: Colors.cyanAccent,
+                          valueColor:
+                              const AlwaysStoppedAnimation<Color>(Colors.red),
+                          value: currentPosition == const Duration()
+                              ? 0
+                              : currentPosition.inSeconds.toDouble() /
+                                  duration!.inSeconds.toDouble()),
+                    ),
+                    Text(
+                        "0:${currentPosition != const Duration() ? currentPosition.inSeconds.toString() : 0}/0:${duration != null ? duration!.inSeconds.toString() : 0}"),
+                  ],
+                ),
+                TextButton(
+                    onPressed: () async {
+                      player.stop();
+                      await player.seekToNext();
+                      player.load();
+                      setDuration();
+                    },
+                    child: const Text("Prochain morceau"))
               ],
             ),
           )),
