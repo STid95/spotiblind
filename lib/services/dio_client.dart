@@ -25,6 +25,7 @@ class DioClient {
   }
 
   Future<User?> getCurrentUser() async {
+    print(accessToken);
     try {
       dio.Response userData = await _dio.get('$_baseUrl/me',
           options: dio.Options(headers: {
@@ -43,29 +44,32 @@ class DioClient {
   Future getPlaylists() async {
     List<Playlist> playlists = [];
     try {
-      dio.Response userData = await _dio.get('$_baseUrl/me/playlists',
+      dio.Response userData = await _dio.get(
+          '$_baseUrl/me/playlists?limit=20&offset=0',
           options: dio.Options(headers: {
             'Authorization': 'Bearer $accessToken',
             'Content-Type': 'application/json'
           }));
       List<dynamic> items = userData.data['items'];
-      playlists = items.map((e) => Playlist.fromJson(e)).toList();
 
-      Get.put(playlists, tag: "playlists");
+      playlists = items.map((e) => Playlist.fromJson(e)).toList();
     } catch (e) {
       print(e);
     }
+    Get.put(playlists, tag: "playlists");
   }
 
   Future<List<Playlist>> getFuturePlaylists(int offset) async {
+    print('$_baseUrl/me/playlists?limit=20&offset=$offset');
     try {
       dio.Response userData = await _dio.get(
-          '$_baseUrl/me/playlists?offset=$offset',
+          '$_baseUrl/me/playlists?limit=20&offset=$offset',
           options: dio.Options(headers: {
             'Authorization': 'Bearer $accessToken',
             'Content-Type': 'application/json'
           }));
       List<dynamic> items = userData.data['items'];
+
       return items.map((e) => Playlist.fromJson(e)).toList();
     } catch (e) {
       print(e);

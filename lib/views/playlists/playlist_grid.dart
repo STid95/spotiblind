@@ -34,25 +34,39 @@ class PlaylistGrid extends StatelessWidget {
                   },
                   child: Card(
                     shadowColor: Theme.of(context).colorScheme.primary,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        if (e.images.isNotEmpty)
-                          Image.network(
-                            e.images.first.url,
-                          ),
-                        const SizedBox(height: 10),
-                        Text(e.name,
-                            textAlign: TextAlign.center,
-                            overflow: TextOverflow.fade,
-                            maxLines: 2,
-                            style: Theme.of(context)
-                                .textTheme
-                                .headline6!
-                                .copyWith(
-                                    color:
-                                        Theme.of(context).colorScheme.primary)),
-                      ],
+                    child: Padding(
+                      padding: const EdgeInsets.all(5),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          if (e.images.isNotEmpty)
+                            SizedBox(
+                              width: 150,
+                              height: 150,
+                              child: FittedBox(
+                                child: Image.network(
+                                  e.images
+                                      .where((element) =>
+                                          element.height == element.width)
+                                      .first
+                                      .url,
+                                ),
+                              ),
+                            ),
+                          const SizedBox(height: 10),
+                          Text(e.name,
+                              textAlign: TextAlign.center,
+                              overflow: TextOverflow.fade,
+                              maxLines: 2,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headline6!
+                                  .copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .primary)),
+                        ],
+                      ),
                     ),
                   ),
                 ))
