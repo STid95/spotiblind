@@ -83,7 +83,10 @@ class DioClient {
             'Content-Type': 'application/json'
           }));
       List<dynamic> items = userData.data['tracks']['items'];
-      tracks = items.map((e) => Track.fromJson(e['track'])).toList();
+      tracks = items
+          .map((e) => Track.fromJson(e['track']))
+          .where((element) => element.previewUrl != '')
+          .toList();
       playlist.tracks = tracks;
       Get.put(playlist, tag: playlist.id);
     } catch (e) {
