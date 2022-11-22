@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>488850598172-sjecktg5pef7hp4i3ccq1qk7bq0ecjk3.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.488850598172-sjecktg5pef7hp4i3ccq1qk7bq0ecjk3</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>488850598172-jmarl5boc8fm3boi5mb1d4mobgtsujek.apps.googleusercontent.com</string>
+	<key>API_KEY</key>
+	<string>AIzaSyD7Rzjk155gY-rtLPXahviCpvVvfPK8NH0</string>
+	<key>GCM_SENDER_ID</key>
+	<string>488850598172</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.example.spotiblind</string>
+	<key>PROJECT_ID</key>
+	<string>spotiblind-a4a47</string>
+	<key>STORAGE_BUCKET</key>
+	<string>spotiblind-a4a47.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:488850598172:ios:5497b22fbfade3b5b4f2d9</string>
+</dict>
+</plist>

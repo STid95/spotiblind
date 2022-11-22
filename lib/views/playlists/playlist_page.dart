@@ -65,28 +65,27 @@ class _PlaylistPageState extends State<PlaylistPage> {
                   ],
                 ),
                 Text("Choisir une playlist",
-                    style: Theme.of(context).textTheme.headline4),
+                    style: Theme.of(context).textTheme.headline4!.copyWith(
+                        color: Theme.of(context).colorScheme.secondary)),
                 Container(
                   margin: const EdgeInsets.all(16),
                   child: TextField(
                     controller: controller,
                     decoration: InputDecoration(
-                        prefixIcon: const Icon(Icons.search),
-                        hintText: 'Nom de la playlist',
+                        prefixIcon: Icon(Icons.search,
+                            color: Theme.of(context).colorScheme.primary),
+                        hintText: 'Recherche...',
                         border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10))),
                     onChanged: searchPlaylist,
                   ),
                 ),
-                RefreshIndicator(
-                  onRefresh: () => getFuturePlaylists(),
-                  child: SizedBox(
-                    height: MediaQuery.of(context).size.height * 0.65,
-                    child: PlaylistGrid(
-                        controller: _controller,
-                        playlists:
-                            currentQuery != '' ? filteredPlaylists : playlists),
-                  ),
+                SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.65,
+                  child: PlaylistGrid(
+                      controller: _controller,
+                      playlists:
+                          currentQuery != '' ? filteredPlaylists : playlists),
                 ),
               ]),
         ));

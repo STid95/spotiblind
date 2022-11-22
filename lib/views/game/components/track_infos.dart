@@ -13,6 +13,7 @@ class TrackInfos extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
         AlbumCover(currentTrack: currentTrack),
         TrackName(currentTrack: currentTrack),
@@ -32,8 +33,11 @@ class ArtistsNames extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(currentTrack.artists.join(","),
-        style: Theme.of(context).textTheme.headline6);
+    return Text(
+      currentTrack.artists.join(", "),
+      style: Theme.of(context).textTheme.headline6,
+      textAlign: TextAlign.center,
+    );
   }
 }
 
@@ -49,11 +53,14 @@ class TrackName extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
-      child: Text(currentTrack.name,
-          style: Theme.of(context)
-              .textTheme
-              .headline5!
-              .copyWith(color: Theme.of(context).colorScheme.primary)),
+      child: Text(
+        currentTrack.name,
+        style: Theme.of(context)
+            .textTheme
+            .headline5!
+            .copyWith(color: Theme.of(context).colorScheme.primary),
+        textAlign: TextAlign.center,
+      ),
     );
   }
 }
