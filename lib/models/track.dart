@@ -4,13 +4,14 @@ class Track {
   String id;
   List<String> artists;
   String image;
-  Track({
-    required this.name,
-    required this.previewUrl,
-    required this.id,
-    required this.artists,
-    required this.image,
-  });
+  bool selected;
+  Track(
+      {required this.name,
+      required this.previewUrl,
+      required this.id,
+      required this.artists,
+      required this.image,
+      this.selected = true});
 
   factory Track.fromJson(Map<String, dynamic> map) {
     Track t = Track(

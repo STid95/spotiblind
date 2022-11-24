@@ -25,7 +25,6 @@ class DioClient {
   }
 
   Future<User?> getCurrentUser() async {
-    print(accessToken);
     try {
       dio.Response userData = await _dio.get('$_baseUrl/me',
           options: dio.Options(headers: {
@@ -92,7 +91,7 @@ class DioClient {
           .where((element) => element.previewUrl != '')
           .toList();
       playlist.tracks = tracks;
-      Get.put(playlist, tag: playlist.id);
+      Get.put(playlist, tag: "currentPlaylist");
     } catch (e) {
       print(e);
     }

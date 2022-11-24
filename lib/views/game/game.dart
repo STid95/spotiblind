@@ -13,10 +13,8 @@ import 'components/duration_infos.dart';
 import 'components/track_infos.dart';
 
 class Game extends StatefulWidget {
-  final String playlistId;
   const Game({
     Key? key,
-    required this.playlistId,
   }) : super(key: key);
 
   @override
@@ -38,6 +36,7 @@ class _GameState extends State<Game> {
         useLazyPreparation: true,
         shuffleOrder: DefaultShuffleOrder(),
         children: playlist.tracks
+            .where((element) => element.selected)
             .map((e) => (AudioSource.uri(Uri.parse(e.previewUrl))))
             .toList());
     await player.setAudioSource(tracklist,
@@ -46,7 +45,9 @@ class _GameState extends State<Game> {
 
   @override
   void initState() {
-    playlist = Get.find(tag: widget.playlistId);
+    playlist = Get.find<Playlist>(tag: "currentPlaylist");
+    playlist.tracks =
+        playlist.tracks.where((element) => element.selected).toList();
     setPlaylist();
     super.initState();
   }
@@ -73,19 +74,20 @@ class _GameState extends State<Game> {
     subscriptionPosition.cancel();
     subscriptionDuration.cancel();
     player.dispose();
-    Get.delete(tag: widget.playlistId, force: true);
+    Get.delete(tag: "currentPlaylist", force: true);
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     bool showInfos = Get.find(tag: "showInfos");
-    bool isMaster = true;
+    bool isMaster = Get.find<bool>(tag: "isMaster");
     Track currentTrack = playlist.tracks[player.currentIndex ?? 0];
     isPlaying = player.playing;
     setDuration();
     return SafeArea(
       child: Scaffold(
+          resizeToAvoidBottomInset: false,
           appBar: const GenAppBar(),
           body: SizedBox(
             height: MediaQuery.of(context).size.height,

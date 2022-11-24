@@ -36,9 +36,9 @@ class _GenAppBarState extends State<GenAppBar> {
     try {
       await _authManager.login();
       if (_authManager.isLogged.value) {
-        setStatus('connect to spotify successful');
+        setStatus('Connexion réussie');
       } else {
-        setStatus('connect to spotify failed');
+        setStatus('Erreur de connexion');
       }
     } on PlatformException catch (e) {
       setStatus(e.code, message: e.message);
@@ -46,7 +46,9 @@ class _GenAppBarState extends State<GenAppBar> {
       setStatus('not implemented');
     }
 
-    Get.snackbar("Résultat", text, snackPosition: SnackPosition.BOTTOM);
+    Get.snackbar("Résultat", text,
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Theme.of(context).colorScheme.primary);
   }
 
   Future<void> disconnectSpotify() async {
@@ -54,9 +56,9 @@ class _GenAppBarState extends State<GenAppBar> {
       bool disconnect = await SpotifySdk.disconnect();
       if (disconnect) {
         _authManager.logOut();
-        setStatus("Successfully disconnected");
+        setStatus("Déconnexion réussie");
       } else {
-        setStatus("Something went wrong");
+        setStatus("Erreur de déconnexion");
       }
     } on PlatformException catch (e) {
       setStatus(e.code, message: e.message);
@@ -65,9 +67,11 @@ class _GenAppBarState extends State<GenAppBar> {
     }
 
     if (Get.currentRoute != "/Home") {
-      Get.off(const Home());
+      Get.off(() => const Home());
     }
-    Get.snackbar("Résultat", text, snackPosition: SnackPosition.BOTTOM);
+    Get.snackbar("Résultat", text,
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Theme.of(context).colorScheme.primary);
   }
 
   void setStatus(String code, {String? message}) {

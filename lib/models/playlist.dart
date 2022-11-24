@@ -24,8 +24,4 @@ class Playlist extends GetxController {
       name: map['name'] ?? '',
     );
   }
-
-  void deleteTrack(String id) {
-    tracks.removeWhere((element) => element.id == id);
-  }
 }

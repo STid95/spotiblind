@@ -1,3 +1,4 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get/get.dart';
 import 'package:spotiblind/services/dio_client.dart';
 import 'package:spotify_sdk/spotify_sdk.dart';
@@ -8,6 +9,8 @@ class AuthenticationManager extends GetxController with CacheManager {
   final isLogged = false.obs;
   String scopes =
       "app-remote-control, playlist-read-private, playlist-read-collaborative, user-library-read";
+  String clientId = dotenv.env['CLIENT_SECRET'] ?? '';
+  String redirectUrl = dotenv.env['REDIRECT_URL'] ?? '';
 
   void logOut() {
     isLogged.value = false;
@@ -17,16 +20,14 @@ class AuthenticationManager extends GetxController with CacheManager {
   Future login() async {
     String? token = getToken();
     final connect = await SpotifySdk.connectToSpotifyRemote(
-      clientId: "13f262e800754d799ad89db47aaf5d3d",
-      redirectUrl: "https://www.google.fr",
+      clientId: clientId,
+      redirectUrl: redirectUrl,
       accessToken: token,
       scope: scopes,
     );
     if (connect && token == null) {
       var token = await SpotifySdk.getAccessToken(
-          clientId: "13f262e800754d799ad89db47aaf5d3d",
-          redirectUrl: "https://www.google.fr",
-          scope: scopes);
+          clientId: clientId, redirectUrl: redirectUrl, scope: scopes);
       if (token != '') {
         await saveToken(token);
         DioClient client = await DioClient.init();
@@ -43,13 +44,13 @@ class AuthenticationManager extends GetxController with CacheManager {
         getToken(); //Check if there's a token stocked, which means Spotify is linked
     if (token != null) {
       SpotifySdk.connectToSpotifyRemote(
-          clientId: "13f262e800754d799ad89db47aaf5d3d",
-          redirectUrl: "https://www.google.fr",
+          clientId: clientId,
+          redirectUrl: redirectUrl,
           accessToken: token,
           scope: scopes);
       await saveToken(await SpotifySdk.getAccessToken(
-          clientId: "13f262e800754d799ad89db47aaf5d3d",
-          redirectUrl: "https://www.google.fr",
+          clientId: clientId,
+          redirectUrl: redirectUrl,
           scope: scopes)); //refresh Token
       final client = await DioClient.init();
       final spotifyUser = await client.getCurrentUser();

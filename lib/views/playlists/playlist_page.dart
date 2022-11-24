@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:spotiblind/services/dio_client.dart';
+import 'package:spotiblind/views/commons/widgets.dart';
 
 import '../../models/playlist.dart';
 import '../commons/page.dart';
-import 'playlist_grid.dart';
+import 'components/playlist_grid.dart';
 
 class PlaylistPage extends StatefulWidget {
   const PlaylistPage({super.key});
@@ -19,18 +20,20 @@ class _PlaylistPageState extends State<PlaylistPage> {
   List<Playlist> playlists = [];
   final ScrollController _controller = ScrollController();
   bool showInfos = true;
+  bool selectTracks = false;
   TextEditingController controller = TextEditingController();
   List<Playlist> filteredPlaylists = [];
   String currentQuery = '';
 
   @override
   void initState() {
-    playlists = Get.find(tag: "playlists");
-    offset = playlists.length;
-    filteredPlaylists = List.from(playlists);
-    Get.put(showInfos, tag: "showInfos");
-    super.initState();
+    setPlaylistAndSettings();
 
+    setListenerOnScroll();
+    super.initState();
+  }
+
+  void setListenerOnScroll() {
     _controller.addListener(() {
       if (_controller.position.atEdge) {
         if (_controller.position.pixels == 0) {
@@ -41,47 +44,61 @@ class _PlaylistPageState extends State<PlaylistPage> {
     });
   }
 
+  void setPlaylistAndSettings() {
+    playlists = Get.find(tag: "playlists");
+    offset = playlists.length;
+    filteredPlaylists = List.from(playlists);
+    Get.put(showInfos, tag: "showInfos");
+    Get.put(selectTracks, tag: "selectTracks");
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
         resizeToAvoidBottomInset: false,
         appBar: const GenAppBar(),
         body: SizedBox(
-          height: MediaQuery.of(context).size.height * 0.9,
+          height: MediaQuery.of(context).size.height,
           child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    const Text("Partage d'écran"),
-                    Switch(
-                        value: !showInfos,
-                        onChanged: ((value) {
-                          showInfos = !value;
-                          Get.replace(showInfos, tag: "showInfos");
-                          setState(() {});
-                        })),
-                  ],
-                ),
-                Text("Choisir une playlist",
-                    style: Theme.of(context).textTheme.headline4!.copyWith(
-                        color: Theme.of(context).colorScheme.secondary)),
-                Container(
-                  margin: const EdgeInsets.all(16),
-                  child: TextField(
-                    controller: controller,
-                    decoration: InputDecoration(
-                        prefixIcon: Icon(Icons.search,
-                            color: Theme.of(context).colorScheme.primary),
-                        hintText: 'Recherche...',
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10))),
-                    onChanged: searchPlaylist,
+                SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.3,
+                  child: Column(
+                    children: [
+                      SettingSwitch(
+                          label: "Partage d'écran",
+                          value: !showInfos,
+                          onChanged: ((value) {
+                            showInfos = !value;
+                            Get.replace(showInfos, tag: "showInfos");
+                            setState(() {});
+                          })),
+                      SettingSwitch(
+                          label: "Choisir les morceaux",
+                          value: selectTracks,
+                          onChanged: ((value) {
+                            selectTracks = value;
+                            Get.replace(showInfos, tag: "selectTracks");
+                            setState(() {});
+                          })),
+                      Container(
+                        margin: const EdgeInsets.all(16),
+                        child: TextField(
+                          controller: controller,
+                          decoration: InputDecoration(
+                              prefixIcon: Icon(Icons.search,
+                                  color: Theme.of(context).colorScheme.primary),
+                              hintText: 'Recherche...',
+                              border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10))),
+                          onChanged: searchPlaylist,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                SizedBox(
-                  height: MediaQuery.of(context).size.height * 0.65,
+                Expanded(
                   child: PlaylistGrid(
                       controller: _controller,
                       playlists:
