@@ -19,8 +19,7 @@ class UserInfos extends StatelessWidget {
       final logged = authManager.isLogged.value;
       User? user;
       if (logged) {
-        User currentUser = Get.find(tag: "currentUser");
-        user = currentUser;
+        user = Get.find<User>(tag: "currentUser");
       } else {
         user = null;
       }

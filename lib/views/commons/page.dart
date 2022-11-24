@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:spotiblind/views/home/home.dart';
 import 'package:spotify_sdk/spotify_sdk.dart';
 
 import '../../services/auth_manager.dart';
-import '../home/home.dart';
+import '../home_master/home_master.dart';
 
 class GenAppBar extends StatefulWidget with PreferredSizeWidget {
   const GenAppBar({
@@ -24,6 +25,11 @@ class _GenAppBarState extends State<GenAppBar> {
   @override
   Widget build(BuildContext context) {
     return AppBar(
+        actions: [
+          IconButton(
+              onPressed: () => Get.to(() => const Home()),
+              icon: const Icon(Icons.home))
+        ],
         leading: IconButton(
             onPressed: _authManager.isLogged.value
                 ? () => disconnectSpotify()
@@ -66,8 +72,8 @@ class _GenAppBarState extends State<GenAppBar> {
       setStatus('not implemented');
     }
 
-    if (Get.currentRoute != "/Home") {
-      Get.off(() => const Home());
+    if (Get.currentRoute != "/HomeMaster") {
+      Get.off(() => const HomeMaster());
     }
     Get.snackbar("Résultat", text,
         snackPosition: SnackPosition.BOTTOM,

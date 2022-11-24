@@ -14,6 +14,7 @@ class AuthenticationManager extends GetxController with CacheManager {
 
   void logOut() {
     isLogged.value = false;
+    Get.find<DioClient>().resetUser();
     removeToken();
   }
 

@@ -7,15 +7,14 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:json_theme/json_theme.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:spotiblind/views/home/home.dart';
 import 'firebase_options.dart';
 
 import 'models/user.dart';
-import 'views/splash_view.dart';
 
 Future<void> main() async {
   await GetStorage.init();
-  User user = User(id: '', images: [], displayName: '');
-  Get.put(user);
+  createUser();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
@@ -26,6 +25,11 @@ Future<void> main() async {
   await dotenv.load(fileName: ".env");
 
   runApp(MyApp(theme: theme));
+}
+
+void createUser() {
+  User user = User(id: '', images: [], displayName: '');
+  Get.put<User>(user, tag: "currentUser");
 }
 
 class MyApp extends StatelessWidget {
@@ -40,7 +44,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return GetMaterialApp(
       theme: theme,
-      home: SplashView(),
+      home: const Home(),
     );
   }
 }

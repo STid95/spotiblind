@@ -32,12 +32,22 @@ class DioClient {
             'Content-Type': 'application/json'
           }));
       User user = User.fromJson(userData.data);
-      Get.put(user, tag: "currentUser");
+      Get.replace(user, tag: "currentUser");
       return user;
     } catch (e) {
       print(e);
     }
     return null;
+  }
+
+  Future<void> resetUser() async {
+    try {
+      Get.replace(User(id: '', images: [], displayName: ''),
+          tag: "currentUser");
+    } catch (e) {
+      print(e);
+    }
+    return;
   }
 
   Future getPlaylists() async {
@@ -76,7 +86,7 @@ class DioClient {
     return [];
   }
 
-  Future getPlaylistTracks(Playlist playlist) async {
+  Future<List<Track>> getPlaylistTracks(Playlist playlist) async {
     List<Track> tracks = [];
     try {
       dio.Response userData = await _dio.get(
@@ -90,10 +100,9 @@ class DioClient {
           .map((e) => Track.fromJson(e['track']))
           .where((element) => element.previewUrl != '')
           .toList();
-      playlist.tracks = tracks;
-      Get.put(playlist, tag: "currentPlaylist");
     } catch (e) {
       print(e);
     }
+    return tracks;
   }
 }

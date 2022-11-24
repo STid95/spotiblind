@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:spotiblind/services/dio_client.dart';
 import 'package:spotiblind/views/commons/widgets.dart';
+import 'package:spotiblind/views/home_master/home_master.dart';
 
 import '../../models/playlist.dart';
 import '../commons/page.dart';
@@ -28,7 +29,6 @@ class _PlaylistPageState extends State<PlaylistPage> {
   @override
   void initState() {
     setPlaylistAndSettings();
-
     setListenerOnScroll();
     super.initState();
   }
@@ -54,58 +54,67 @@ class _PlaylistPageState extends State<PlaylistPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-        resizeToAvoidBottomInset: false,
-        appBar: const GenAppBar(),
-        body: SizedBox(
-          height: MediaQuery.of(context).size.height,
-          child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                SizedBox(
-                  height: MediaQuery.of(context).size.height * 0.3,
-                  child: Column(
-                    children: [
-                      SettingSwitch(
-                          label: "Partage d'écran",
-                          value: !showInfos,
-                          onChanged: ((value) {
-                            showInfos = !value;
-                            Get.replace(showInfos, tag: "showInfos");
-                            setState(() {});
-                          })),
-                      SettingSwitch(
-                          label: "Choisir les morceaux",
-                          value: selectTracks,
-                          onChanged: ((value) {
-                            selectTracks = value;
-                            Get.replace(showInfos, tag: "selectTracks");
-                            setState(() {});
-                          })),
-                      Container(
-                        margin: const EdgeInsets.all(16),
-                        child: TextField(
-                          controller: controller,
-                          decoration: InputDecoration(
-                              prefixIcon: Icon(Icons.search,
-                                  color: Theme.of(context).colorScheme.primary),
-                              hintText: 'Recherche...',
-                              border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10))),
-                          onChanged: searchPlaylist,
+    return WillPopScope(
+      onWillPop: _onBackPressed,
+      child: Scaffold(
+          resizeToAvoidBottomInset: false,
+          appBar: const GenAppBar(),
+          body: SizedBox(
+            height: MediaQuery.of(context).size.height,
+            child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  SizedBox(
+                    height: MediaQuery.of(context).size.height * 0.3,
+                    child: Column(
+                      children: [
+                        SettingSwitch(
+                            label: "Partage d'écran",
+                            value: !showInfos,
+                            onChanged: ((value) {
+                              showInfos = !value;
+                              Get.replace(showInfos, tag: "showInfos");
+                              setState(() {});
+                            })),
+                        SettingSwitch(
+                            label: "Choisir les morceaux",
+                            value: selectTracks,
+                            onChanged: ((value) {
+                              selectTracks = value;
+                              Get.replace(selectTracks, tag: "selectTracks");
+                              setState(() {});
+                            })),
+                        Container(
+                          margin: const EdgeInsets.all(16),
+                          child: TextField(
+                            controller: controller,
+                            decoration: InputDecoration(
+                                prefixIcon: Icon(Icons.search,
+                                    color:
+                                        Theme.of(context).colorScheme.primary),
+                                hintText: 'Recherche...',
+                                border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10))),
+                            onChanged: searchPlaylist,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                Expanded(
-                  child: PlaylistGrid(
-                      controller: _controller,
-                      playlists:
-                          currentQuery != '' ? filteredPlaylists : playlists),
-                ),
-              ]),
-        ));
+                  Expanded(
+                    child: PlaylistGrid(
+                        controller: _controller,
+                        playlists:
+                            currentQuery != '' ? filteredPlaylists : playlists),
+                  ),
+                ]),
+          )),
+    );
+  }
+
+  Future<bool> _onBackPressed() async {
+    Get.to(() => const HomeMaster());
+    return true;
   }
 
   Future<void> getFuturePlaylists() {
@@ -119,13 +128,7 @@ class _PlaylistPageState extends State<PlaylistPage> {
         if (mounted) {
           final previousLength = playlists.length;
           setState(() {
-            playlists.addAll(value);
-            filteredPlaylists.addAll(currentQuery != ''
-                ? value.where((element) => element.name
-                    .toLowerCase()
-                    .contains(currentQuery.toLowerCase()))
-                : value);
-            offset = offset + 20;
+            addToPlaylist(value);
             if (previousLength == playlists.length) end = true;
             setState(() {});
           });
@@ -135,6 +138,15 @@ class _PlaylistPageState extends State<PlaylistPage> {
     } else {
       return noMore();
     }
+  }
+
+  void addToPlaylist(List<Playlist> value) {
+    playlists.addAll(value);
+    filteredPlaylists.addAll(currentQuery != ''
+        ? value.where((element) =>
+            element.name.toLowerCase().contains(currentQuery.toLowerCase()))
+        : value);
+    offset = offset + 20;
   }
 
   void searchPlaylist(String query) {

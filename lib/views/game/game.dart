@@ -3,13 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:spotiblind/models/playlist.dart';
 
-import 'package:spotiblind/views/commons/page.dart';
+import 'package:spotiblind/models/playlist.dart';
+import 'package:spotiblind/views/playlists/playlist_page.dart';
 
 import '../../models/track.dart';
-import '../commons/widgets.dart';
-import 'components/duration_infos.dart';
+import 'components/player.dart';
 import 'components/track_infos.dart';
 
 class Game extends StatefulWidget {
@@ -24,6 +23,7 @@ class Game extends StatefulWidget {
 class _GameState extends State<Game> {
   bool isPlaying = false;
   final player = AudioPlayer();
+
   Duration? duration;
   Duration currentPosition = const Duration(seconds: 0);
   int track = 0;
@@ -49,6 +49,7 @@ class _GameState extends State<Game> {
     playlist.tracks =
         playlist.tracks.where((element) => element.selected).toList();
     setPlaylist();
+
     super.initState();
   }
 
@@ -61,21 +62,58 @@ class _GameState extends State<Game> {
     });
     subscriptionPosition = player.positionStream.listen((position) {
       currentPosition = position;
+      if (currentPosition == duration && player.playing) {
+        showScores();
+      }
       if (mounted) {
         setState(() {});
       }
     });
+    if (mounted) {
+      setState(() {});
+    }
+  }
 
-    setState(() {});
+  void showScores() {
+    player.pause();
+    showDashboard();
+  }
+
+  Future<dynamic> showDashboard() {
+    return Get.defaultDialog(
+        title: "Scores",
+        content: Column(
+          children: [
+            TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  player.seekToNext();
+                  player.play();
+                },
+                child: const Text("Prochain morceau")),
+            if (currentPosition != duration)
+              TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    player.play();
+                  },
+                  child: const Text("Finir morceau")),
+          ],
+        ));
   }
 
   @override
   void dispose() {
+    disposeEverything();
+    super.dispose();
+  }
+
+  void disposeEverything() {
+    player.dispose();
     subscriptionPosition.cancel();
     subscriptionDuration.cancel();
-    player.dispose();
-    Get.delete(tag: "currentPlaylist", force: true);
-    super.dispose();
+    Get.delete<Playlist>(tag: "currentPlaylist", force: true);
+    Get.to(() => const PlaylistPage());
   }
 
   @override
@@ -85,116 +123,82 @@ class _GameState extends State<Game> {
     Track currentTrack = playlist.tracks[player.currentIndex ?? 0];
     isPlaying = player.playing;
     setDuration();
-    return SafeArea(
-      child: Scaffold(
-          resizeToAvoidBottomInset: false,
-          appBar: const GenAppBar(),
-          body: SizedBox(
-            height: MediaQuery.of(context).size.height,
-            width: MediaQuery.of(context).size.width,
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  showInfos && isMaster
-                      ? TrackInfos(currentTrack: currentTrack)
-                      : Text("A vous de deviner !",
-                          style: Theme.of(context).textTheme.headline5),
-                  SizedBox(
-                    width: 300,
-                    child: Column(
-                      children: [
-                        Slider(
-                            value: currentPosition == const Duration()
-                                ? 0
-                                : currentPosition.inSeconds.toDouble() /
-                                    duration!.inSeconds.toDouble(),
-                            onChanged: (value) {
-                              if (isMaster) {
-                                player.seek(Duration(
-                                    seconds:
-                                        (duration!.inSeconds * value).toInt()));
-                              }
-                            }),
-                        DurationInfos(
-                            currentPosition: currentPosition,
-                            duration: duration),
-                        const SizedBox(
-                          height: 10,
-                        ),
-                        Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                Theme.of(context).colorScheme.secondary,
-                                Theme.of(context).colorScheme.primary,
-                              ],
-                            ),
-                            borderRadius:
-                                const BorderRadius.all(Radius.circular(100)),
-                          ),
-                          child: IconBtn(
-                              size: isMaster ? 50 : 150,
-                              color: Colors.white,
-                              icon: isMaster
-                                  ? Icon(isPlaying
-                                      ? Icons.pause
-                                      : Icons.play_arrow)
-                                  : const Icon(Icons.alarm),
-                              onPressed: () {
-                                isPlaying ? player.pause() : player.play();
-                                setState(() {
-                                  isPlaying = !isPlaying;
-                                });
-                              }),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (isMaster)
-                    Wrap(
-                      alignment: WrapAlignment.center,
-                      spacing: 10,
-                      runSpacing: 10,
-                      children: [
-                        ElevatedButton(
-                            onPressed: () async {
-                              player.pause();
-                              player.play();
-                            },
-                            child: const Text("Artiste trouvé")),
-                        ElevatedButton(
-                            onPressed: () async {
-                              player.pause();
-                              player.play();
-                            },
-                            child: const Text("Titre trouvé")),
-                        ElevatedButton(
-                            onPressed: () async {
-                              player.stop();
-                              await player.seekToNext();
-                              player.load();
-                              setDuration();
-                            },
-                            child: const Text("Tout trouvé")),
-                        ElevatedButton(
-                            onPressed: () async {
-                              player.stop();
-                              await player.seekToNext();
-                              player.load();
-                              setDuration();
-                            },
-                            child: const Text("Prochain morceau")),
-                      ],
-                    )
-                ],
+    return WillPopScope(
+      onWillPop: _onBackPressed,
+      child: SafeArea(
+        child: Scaffold(
+            resizeToAvoidBottomInset: false,
+            body: SizedBox(
+              height: MediaQuery.of(context).size.height,
+              width: MediaQuery.of(context).size.width,
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    showInfos && isMaster
+                        ? TrackInfos(currentTrack: currentTrack)
+                        : Text("A vous de deviner !",
+                            style: Theme.of(context).textTheme.headline5),
+                    Player(
+                        isMaster: isMaster,
+                        currentPosition: currentPosition,
+                        duration: duration,
+                        onChangedSlider: (value) {
+                          if (isMaster) {
+                            player.seek(Duration(
+                                seconds:
+                                    (duration!.inSeconds * value).toInt()));
+                          }
+                        },
+                        onPressedIcon: () {
+                          isPlaying ? player.pause() : player.play();
+                          setState(() {
+                            isPlaying = !isPlaying;
+                          });
+                        },
+                        isPlaying: isPlaying),
+                    if (isMaster)
+                      Wrap(
+                        alignment: WrapAlignment.center,
+                        spacing: 10,
+                        runSpacing: 10,
+                        children: [
+                          ElevatedButton(
+                              onPressed: () async {
+                                player.pause();
+                                player.play();
+                              },
+                              child: const Text("Artiste trouvé")),
+                          ElevatedButton(
+                              onPressed: () async {
+                                player.pause();
+                                player.play();
+                              },
+                              child: const Text("Titre trouvé")),
+                          ElevatedButton(
+                              onPressed: () async {
+                                showScores();
+                              },
+                              child: const Text("Tout trouvé")),
+                          ElevatedButton(
+                              onPressed: () async {
+                                showScores();
+                              },
+                              child: const Text("Prochain morceau")),
+                        ],
+                      )
+                  ],
+                ),
               ),
-            ),
-          )),
+            )),
+      ),
     );
+  }
+
+  Future<bool> _onBackPressed() async {
+    disposeEverything();
+    return true;
   }
 }

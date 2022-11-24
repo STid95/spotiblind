@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../services/auth_manager.dart';
-import 'home/home.dart';
+import 'home_master/home_master.dart';
 
 class SplashView extends StatelessWidget {
   final AuthenticationManager _authmanager = Get.put(AuthenticationManager());
 
   Future<void> initializeSettings() async {
     _authmanager.checkLoginStatus();
-    await Future.delayed(const Duration(seconds: 2));
+    await Future.delayed(const Duration(seconds: 1));
   }
 
   @override
@@ -23,7 +23,7 @@ class SplashView extends StatelessWidget {
           if (snapshot.hasError) {
             return errorView(snapshot);
           } else {
-            return const Home();
+            return const HomeMaster();
           }
         }
       },
@@ -45,7 +45,7 @@ class SplashView extends StatelessWidget {
             padding: EdgeInsets.all(16.0),
             child: CircularProgressIndicator(),
           ),
-          Text('Loading...'),
+          Text('Recherche de compte Spotify...'),
         ],
       ),
     ));
