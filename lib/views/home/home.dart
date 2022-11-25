@@ -17,10 +17,13 @@ class Home extends StatelessWidget {
         children: [
           const Text("Bienvenue sur Spotiblind !"),
           ElevatedButton(
-              onPressed: () => Get.off(() =>
-                  Get.find<User>(tag: "currentUser").displayName != ''
-                      ? const HomeMaster()
-                      : SplashView()),
+              onPressed: () {
+                Get.put<bool>(true, tag: "isMaster");
+                Get.off(() =>
+                    Get.find<User>(tag: "currentUser").displayName != ''
+                        ? const HomeMaster()
+                        : SplashView());
+              },
               child: const Text("Créer une partie")),
           ElevatedButton(
               onPressed: () {

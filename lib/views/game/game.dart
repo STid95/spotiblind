@@ -5,22 +5,24 @@ import 'package:get/get.dart';
 import 'package:just_audio/just_audio.dart';
 
 import 'package:spotiblind/models/playlist.dart';
+import 'package:spotiblind/services/firestore_manager.dart';
 import 'package:spotiblind/views/playlists/playlist_page.dart';
 
+import '../../models/game.dart';
 import '../../models/track.dart';
 import 'components/player.dart';
 import 'components/track_infos.dart';
 
-class Game extends StatefulWidget {
-  const Game({
+class GamePage extends StatefulWidget {
+  const GamePage({
     Key? key,
   }) : super(key: key);
 
   @override
-  State<Game> createState() => _GameState();
+  State<GamePage> createState() => _GamePageState();
 }
 
-class _GameState extends State<Game> {
+class _GamePageState extends State<GamePage> {
   bool isPlaying = false;
   final player = AudioPlayer();
 
@@ -30,6 +32,7 @@ class _GameState extends State<Game> {
   late Playlist playlist;
   late StreamSubscription<Duration> subscriptionPosition;
   late StreamSubscription<Duration?> subscriptionDuration;
+  late FirestoreManager firestoreManager;
 
   void setPlaylist() async {
     final tracklist = ConcatenatingAudioSource(
@@ -49,7 +52,8 @@ class _GameState extends State<Game> {
     playlist.tracks =
         playlist.tracks.where((element) => element.selected).toList();
     setPlaylist();
-
+    firestoreManager =
+        FirestoreManager(gameId: Get.find<String>(tag: "gameId"));
     super.initState();
   }
 
@@ -113,6 +117,7 @@ class _GameState extends State<Game> {
     subscriptionPosition.cancel();
     subscriptionDuration.cancel();
     Get.delete<Playlist>(tag: "currentPlaylist", force: true);
+    Get.delete<String>(tag: "gameId", force: true);
     Get.to(() => const PlaylistPage());
   }
 
@@ -123,75 +128,90 @@ class _GameState extends State<Game> {
     Track currentTrack = playlist.tracks[player.currentIndex ?? 0];
     isPlaying = player.playing;
     setDuration();
+
     return WillPopScope(
       onWillPop: _onBackPressed,
       child: SafeArea(
         child: Scaffold(
             resizeToAvoidBottomInset: false,
-            body: SizedBox(
-              height: MediaQuery.of(context).size.height,
-              width: MediaQuery.of(context).size.width,
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    showInfos && isMaster
-                        ? TrackInfos(currentTrack: currentTrack)
-                        : Text("A vous de deviner !",
-                            style: Theme.of(context).textTheme.headline5),
-                    Player(
-                        isMaster: isMaster,
-                        currentPosition: currentPosition,
-                        duration: duration,
-                        onChangedSlider: (value) {
-                          if (isMaster) {
-                            player.seek(Duration(
-                                seconds:
-                                    (duration!.inSeconds * value).toInt()));
-                          }
-                        },
-                        onPressedIcon: () {
-                          isPlaying ? player.pause() : player.play();
-                          setState(() {
-                            isPlaying = !isPlaying;
-                          });
-                        },
-                        isPlaying: isPlaying),
-                    if (isMaster)
-                      Wrap(
-                        alignment: WrapAlignment.center,
-                        spacing: 10,
-                        runSpacing: 10,
+            body: StreamBuilder(
+              stream: firestoreManager.getGame(),
+              builder: ((context, snapshot) {
+                if (snapshot.hasData) {
+                  Game game = snapshot.data!;
+
+                  return SizedBox(
+                    height: MediaQuery.of(context).size.height,
+                    width: MediaQuery.of(context).size.width,
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          ElevatedButton(
-                              onPressed: () async {
-                                player.pause();
-                                player.play();
+                          showInfos && isMaster
+                              ? TrackInfos(currentTrack: currentTrack)
+                              : Text("A vous de deviner !",
+                                  style: Theme.of(context).textTheme.headline5),
+                          Text("Chansons restantes : ${game.remainingSongs}"),
+                          Player(
+                              isMaster: isMaster,
+                              currentPosition: currentPosition,
+                              duration: duration,
+                              onChangedSlider: (value) {
+                                if (isMaster) {
+                                  player.seek(Duration(
+                                      seconds: (duration!.inSeconds * value)
+                                          .toInt()));
+                                }
                               },
-                              child: const Text("Artiste trouvé")),
-                          ElevatedButton(
-                              onPressed: () async {
-                                player.pause();
-                                player.play();
+                              onPressedIcon: () {
+                                isPlaying ? player.pause() : player.play();
+                                setState(() {
+                                  isPlaying = !isPlaying;
+                                });
                               },
-                              child: const Text("Titre trouvé")),
-                          ElevatedButton(
-                              onPressed: () async {
-                                showScores();
-                              },
-                              child: const Text("Tout trouvé")),
-                          ElevatedButton(
-                              onPressed: () async {
-                                showScores();
-                              },
-                              child: const Text("Prochain morceau")),
+                              isPlaying: isPlaying),
+                          if (isMaster)
+                            Wrap(
+                              alignment: WrapAlignment.center,
+                              spacing: 10,
+                              runSpacing: 10,
+                              children: [
+                                ElevatedButton(
+                                    onPressed: () async {
+                                      player.pause();
+                                      player.play();
+                                    },
+                                    child: const Text("Artiste trouvé")),
+                                ElevatedButton(
+                                    onPressed: () async {
+                                      player.pause();
+                                      player.play();
+                                    },
+                                    child: const Text("Titre trouvé")),
+                                ElevatedButton(
+                                    onPressed: () async {
+                                      showScores();
+                                    },
+                                    child: const Text("Tout trouvé")),
+                                ElevatedButton(
+                                    onPressed: () async {
+                                      showScores();
+                                      firestoreManager.updateRemainingSongs(
+                                          game.remainingSongs - 1);
+                                    },
+                                    child: const Text("Prochain morceau")),
+                              ],
+                            )
                         ],
-                      )
-                  ],
-                ),
-              ),
+                      ),
+                    ),
+                  );
+                } else {
+                  return const CircularProgressIndicator();
+                }
+              }),
             )),
       ),
     );

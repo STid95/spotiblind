@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:spotiblind/services/dio_client.dart';
 
+import '../../models/game.dart';
 import '../../models/playlist.dart';
 import '../game/game.dart';
 
@@ -149,10 +150,10 @@ class _CodeFormState extends State<CodeForm> {
                 loading = false;
               }));
     }
-    Get.put(widget.playlist, tag: "currentPlaylist");
-    FirebaseFirestore.instance.collection("games").add({"entry_code": code});
-    Get.put(true, tag: "isMaster");
-    Get.to(() => const Game());
+    Get.put<Playlist>(widget.playlist!, tag: "currentPlaylist");
+    await Game.createInFirestore(
+        widget.playlist!.tracks.length, codeController.text);
+    Get.to(() => const GamePage());
   }
 }
 
