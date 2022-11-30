@@ -4,10 +4,12 @@ import 'package:just_audio/just_audio.dart';
 class BtnBar extends StatelessWidget {
   final AudioPlayer player;
   final VoidCallback showScores;
+  final bool hasBuzzed;
   const BtnBar({
     Key? key,
     required this.player,
     required this.showScores,
+    required this.hasBuzzed,
   }) : super(key: key);
 
   @override
@@ -17,21 +19,21 @@ class BtnBar extends StatelessWidget {
       spacing: 10,
       runSpacing: 10,
       children: [
-        FoundArtist(
-          onPressed: () {
-            player.pause();
-            player.play();
-          },
-        ),
-        FoundTitle(
-          onPressed: () {
-            player.pause();
-            player.play();
-          },
-        ),
-        AllFound(
-          onPressed: showScores,
-        ),
+        if (hasBuzzed) ...[
+          FoundArtist(
+            onPressed: () {
+              player.play();
+            },
+          ),
+          FoundTitle(
+            onPressed: () {
+              player.play();
+            },
+          ),
+          AllFound(
+            onPressed: showScores,
+          ),
+        ],
         NextSong(
           onPressed: showScores,
         ),

@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get/get.dart';
 
-import 'package:spotiblind/services/firestore_manager.dart';
+import 'package:spotiblind/services/game_manager.dart';
 
 class Game {
   String uid;
@@ -13,17 +13,18 @@ class Game {
   String entryCode;
   int totalSongs;
   bool started;
-  Game({
-    this.uid = '',
-    this.currentSong = '',
-    this.lastBuzz = '',
-    this.position = Duration.zero,
-    required this.remainingSongs,
-    this.totalDuration = Duration.zero,
-    required this.entryCode,
-    required this.totalSongs,
-    this.started = false,
-  });
+  bool hasBuzzed;
+  Game(
+      {this.uid = '',
+      this.currentSong = '',
+      this.lastBuzz = '',
+      this.position = Duration.zero,
+      required this.remainingSongs,
+      this.totalDuration = Duration.zero,
+      required this.entryCode,
+      required this.totalSongs,
+      this.started = false,
+      this.hasBuzzed = false});
 
   static Future<bool> createInFirestore(
       int totalSongs, String entrycode) async {
@@ -31,9 +32,11 @@ class Game {
         entryCode: entrycode,
         remainingSongs: totalSongs,
         totalSongs: totalSongs);
-    final doc = await FirestoreManager.createGame(game);
+    final doc = await GameManager.createGame(game);
     if (doc != null) {
-      Get.put<String>(doc.id, tag: "gameId");
+      doc.update({"uid": doc.id});
+      game.uid = doc.id;
+      Get.put<String>(game.uid, tag: "gameId");
       return true;
     } else {
       return false;
@@ -41,10 +44,7 @@ class Game {
   }
 
   static Future<bool> searchInFirestore(String entrycode) async {
-    final games = await FirebaseFirestore.instance
-        .collection("games")
-        .where("entry_code", isEqualTo: entrycode)
-        .get();
+    final games = await GameManager.searchForGame(entrycode);
     if (games.docs.isEmpty) {
       return false;
     } else {
@@ -52,6 +52,26 @@ class Game {
       Get.put<String>(id, tag: "gameId");
       return true;
     }
+  }
+
+  void updateCurrentPosition() {
+    GameManager(gameId: uid).updateCurrentPosition(position);
+  }
+
+  void updateDuration() {
+    GameManager(gameId: uid).updateTotalDuration(totalDuration);
+  }
+
+  void updateRemainingSongs() {
+    GameManager(gameId: uid).updateRemainingSongs(remainingSongs);
+  }
+
+  void setBuzz() {
+    GameManager(gameId: uid).setBuzz();
+  }
+
+  void resetBuzz() {
+    GameManager(gameId: uid).resetBuzz();
   }
 
   Map<String, dynamic> toJson() {
@@ -65,21 +85,23 @@ class Game {
     result.addAll({'entry_code': entryCode});
     result.addAll({'total_songs': totalSongs});
     result.addAll({'started': started});
+    result.addAll({'has_buzzed': hasBuzzed});
 
     return result;
   }
 
   factory Game.fromJson(Map<String, dynamic> map) {
     return Game(
-      currentSong: map['current_song'] ?? '',
-      lastBuzz: map['last_buzz'] ?? '',
-      position: Duration(seconds: map['position']),
-      remainingSongs: map['remaining_songs']?.toInt() ?? 0,
-      totalDuration: Duration(seconds: map['total_duration']),
-      entryCode: map['entry_code'] ?? '',
-      totalSongs: map['total_songs']?.toInt() ?? 0,
-      started: map['started'] ?? false,
-    );
+        currentSong: map['current_song'] ?? '',
+        lastBuzz: map['last_buzz'] ?? '',
+        position: Duration(seconds: map['position']),
+        remainingSongs: map['remaining_songs']?.toInt() ?? 0,
+        totalDuration: Duration(seconds: map['total_duration']),
+        entryCode: map['entry_code'] ?? '',
+        totalSongs: map['total_songs']?.toInt() ?? 0,
+        started: map['started'] ?? false,
+        hasBuzzed: map['has_buzzed'] ?? false,
+        uid: map['uid']);
   }
 }
 

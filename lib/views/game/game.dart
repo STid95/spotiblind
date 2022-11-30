@@ -5,7 +5,7 @@ import 'package:get/get.dart';
 import 'package:just_audio/just_audio.dart';
 
 import 'package:spotiblind/models/playlist.dart';
-import 'package:spotiblind/services/firestore_manager.dart';
+import 'package:spotiblind/services/game_manager.dart';
 import 'package:spotiblind/views/playlists/playlist_page.dart';
 
 import '../../models/game.dart';
@@ -28,14 +28,13 @@ class _GamePageState extends State<GamePage> {
   bool isPlaying = false;
   final player = AudioPlayer();
   Game game = Game(entryCode: "0000", totalSongs: 0, remainingSongs: 0);
-
+  late String gameId;
   int track = 0;
   late Playlist? playlist;
   late StreamSubscription<Duration> subscriptionPosition;
   late StreamSubscription<Duration?> subscriptionDuration;
   Duration totalDuration = Duration.zero;
   Duration currentPosition = Duration.zero;
-  late FirestoreManager firestoreManager;
 
   void setPlaylist() async {
     final tracklist = ConcatenatingAudioSource(
@@ -59,8 +58,8 @@ class _GamePageState extends State<GamePage> {
     } else {
       playlist = null;
     }
-    firestoreManager =
-        FirestoreManager(gameId: Get.find<String>(tag: "gameId"));
+    gameId = Get.find<String>(tag: "gameId");
+
     super.initState();
   }
 
@@ -83,7 +82,7 @@ class _GamePageState extends State<GamePage> {
         } else {
           game.position = Duration.zero;
         }
-        firestoreManager.updateCurrentPosition(game.position);
+        game.updateCurrentPosition();
       }
       if (game.position == game.totalDuration && player.playing) {
         showScores(game);
@@ -98,7 +97,7 @@ class _GamePageState extends State<GamePage> {
     subscriptionDuration = player.durationStream.listen((trackDuration) {
       if (trackDuration!.inSeconds != game.totalDuration.inSeconds) {
         game.totalDuration = trackDuration;
-        firestoreManager.updateTotalDuration(game.totalDuration);
+        game.updateDuration();
         totalDuration = trackDuration;
       }
       if (mounted) {
@@ -120,8 +119,9 @@ class _GamePageState extends State<GamePage> {
             TextButton(
                 onPressed: () {
                   Navigator.pop(context);
-                  firestoreManager
-                      .updateRemainingSongs(game.remainingSongs - 1);
+                  game.remainingSongs--;
+                  game.updateRemainingSongs();
+                  game.resetBuzz();
                   player.seekToNext();
                   player.play();
                 },
@@ -170,7 +170,11 @@ class _GamePageState extends State<GamePage> {
         child: Scaffold(
             resizeToAvoidBottomInset: false,
             body: StreamBuilder(
-              stream: firestoreManager.getGame(),
+              stream: GameManager(gameId: gameId).getGame(
+                onListen: (eventGame) {
+                  pauseIfBuzz(eventGame);
+                },
+              ),
               builder: ((context, snapshot) {
                 if (snapshot.hasData) {
                   game = snapshot.data!;
@@ -202,20 +206,22 @@ class _GamePageState extends State<GamePage> {
                                 }
                               },
                               onPressedIcon: () {
-                                if (isPlaying) {
-                                  player.pause();
-                                  subscriptionPosition.pause();
-                                } else {
-                                  player.play();
-                                  subscriptionPosition.resume();
-                                }
-                                setState(() {
-                                  isPlaying = !isPlaying;
-                                });
+                                isMaster
+                                    ? updatePlayer()
+                                    : game.hasBuzzed
+                                        ? null
+                                        : game.setBuzz();
                               },
                               isPlaying: isPlaying),
+                          if (game.hasBuzzed)
+                            Padding(
+                              padding: const EdgeInsets.all(20),
+                              child: Text("${game.lastBuzz} a buzzé !",
+                                  style: Theme.of(context).textTheme.headline6),
+                            ),
                           if (isMaster)
                             BtnBar(
+                                hasBuzzed: game.hasBuzzed,
                                 player: player,
                                 showScores: () => showScores(game))
                         ],
@@ -229,6 +235,25 @@ class _GamePageState extends State<GamePage> {
             )),
       ),
     );
+  }
+
+  void pauseIfBuzz(Game eventGame) {
+    if (eventGame.hasBuzzed && !game.hasBuzzed) {
+      player.pause();
+    }
+  }
+
+  void updatePlayer() {
+    if (isPlaying) {
+      player.pause();
+      subscriptionPosition.pause();
+    } else {
+      player.play();
+      subscriptionPosition.resume();
+    }
+    setState(() {
+      isPlaying = !isPlaying;
+    });
   }
 
   Future<bool> _onBackPressed() async {
