@@ -11,8 +11,14 @@ class FirestoreManager {
     required this.gameId,
   });
 
-  static Future<DocumentReference<Map<String, dynamic>>> createGame(Game game) {
-    return FirebaseFirestore.instance.collection("games").add(game.toJson());
+  static Future<DocumentReference<Map<String, dynamic>>>? createGame(
+      Game game) {
+    try {
+      return FirebaseFirestore.instance.collection("games").add(game.toJson());
+    } catch (e) {
+      print(e);
+      return null;
+    }
   }
 
   Stream<Game> getGame() {
@@ -21,5 +27,15 @@ class FirestoreManager {
 
   void updateRemainingSongs(int remainingSongs) async {
     gamesCollection.doc(gameId).update({'remaining_songs': remainingSongs});
+  }
+
+  void updateTotalDuration(Duration totalDuration) async {
+    gamesCollection
+        .doc(gameId)
+        .update({'total_duration': totalDuration.inSeconds});
+  }
+
+  void updateCurrentPosition(Duration currentPosition) async {
+    gamesCollection.doc(gameId).update({'position': currentPosition.inSeconds});
   }
 }

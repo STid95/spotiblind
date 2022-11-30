@@ -27,7 +27,9 @@ class _GenAppBarState extends State<GenAppBar> {
     return AppBar(
         actions: [
           IconButton(
-              onPressed: () => Get.to(() => const Home()),
+              onPressed: () {
+                Get.to(() => const Home());
+              },
               icon: const Icon(Icons.home))
         ],
         leading: IconButton(

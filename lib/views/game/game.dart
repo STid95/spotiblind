@@ -10,6 +10,8 @@ import 'package:spotiblind/views/playlists/playlist_page.dart';
 
 import '../../models/game.dart';
 import '../../models/track.dart';
+import '../home/home.dart';
+import 'components/buttons/buttons.dart';
 import 'components/player.dart';
 import 'components/track_infos.dart';
 
@@ -25,20 +27,21 @@ class GamePage extends StatefulWidget {
 class _GamePageState extends State<GamePage> {
   bool isPlaying = false;
   final player = AudioPlayer();
+  Game game = Game(entryCode: "0000", totalSongs: 0, remainingSongs: 0);
 
-  Duration? duration;
-  Duration currentPosition = const Duration(seconds: 0);
   int track = 0;
-  late Playlist playlist;
+  late Playlist? playlist;
   late StreamSubscription<Duration> subscriptionPosition;
   late StreamSubscription<Duration?> subscriptionDuration;
+  Duration totalDuration = Duration.zero;
+  Duration currentPosition = Duration.zero;
   late FirestoreManager firestoreManager;
 
   void setPlaylist() async {
     final tracklist = ConcatenatingAudioSource(
         useLazyPreparation: true,
         shuffleOrder: DefaultShuffleOrder(),
-        children: playlist.tracks
+        children: playlist!.tracks
             .where((element) => element.selected)
             .map((e) => (AudioSource.uri(Uri.parse(e.previewUrl))))
             .toList());
@@ -48,42 +51,68 @@ class _GamePageState extends State<GamePage> {
 
   @override
   void initState() {
-    playlist = Get.find<Playlist>(tag: "currentPlaylist");
-    playlist.tracks =
-        playlist.tracks.where((element) => element.selected).toList();
-    setPlaylist();
+    if (Get.find<bool>(tag: "isMaster") == true) {
+      playlist = Get.find<Playlist>(tag: "currentPlaylist");
+      playlist!.tracks =
+          playlist!.tracks.where((element) => element.selected).toList();
+      setPlaylist();
+    } else {
+      playlist = null;
+    }
     firestoreManager =
         FirestoreManager(gameId: Get.find<String>(tag: "gameId"));
     super.initState();
   }
 
-  void setDuration() async {
+  void setDuration(Game game) async {
+    createSubscriptionDuration(game);
+    createSubscriptionPosition(game);
+  }
+
+  void createSubscriptionPosition(Game game) {
+    subscriptionPosition = player
+        .createPositionStream(
+      steps: 1,
+    )
+        .listen((position) {
+      if (currentPosition.inSeconds.toStringAsFixed(0) !=
+          position.inSeconds.toStringAsFixed(0)) {
+        currentPosition = position;
+        if (currentPosition != totalDuration) {
+          game.position = currentPosition;
+        } else {
+          game.position = Duration.zero;
+        }
+        firestoreManager.updateCurrentPosition(game.position);
+      }
+      if (game.position == game.totalDuration && player.playing) {
+        showScores(game);
+      }
+      if (mounted) {
+        setState(() {});
+      }
+    });
+  }
+
+  void createSubscriptionDuration(Game game) {
     subscriptionDuration = player.durationStream.listen((trackDuration) {
-      duration = trackDuration;
-      if (mounted) {
-        setState(() {});
-      }
-    });
-    subscriptionPosition = player.positionStream.listen((position) {
-      currentPosition = position;
-      if (currentPosition == duration && player.playing) {
-        showScores();
+      if (trackDuration!.inSeconds != game.totalDuration.inSeconds) {
+        game.totalDuration = trackDuration;
+        firestoreManager.updateTotalDuration(game.totalDuration);
+        totalDuration = trackDuration;
       }
       if (mounted) {
         setState(() {});
       }
     });
-    if (mounted) {
-      setState(() {});
-    }
   }
 
-  void showScores() {
+  void showScores(Game game) {
     player.pause();
-    showDashboard();
+    showDashboard(game);
   }
 
-  Future<dynamic> showDashboard() {
+  Future<dynamic> showDashboard(Game game) {
     return Get.defaultDialog(
         title: "Scores",
         content: Column(
@@ -91,11 +120,13 @@ class _GamePageState extends State<GamePage> {
             TextButton(
                 onPressed: () {
                   Navigator.pop(context);
+                  firestoreManager
+                      .updateRemainingSongs(game.remainingSongs - 1);
                   player.seekToNext();
                   player.play();
                 },
                 child: const Text("Prochain morceau")),
-            if (currentPosition != duration)
+            if (game.position != game.totalDuration)
               TextButton(
                   onPressed: () {
                     Navigator.pop(context);
@@ -118,16 +149,20 @@ class _GamePageState extends State<GamePage> {
     subscriptionDuration.cancel();
     Get.delete<Playlist>(tag: "currentPlaylist", force: true);
     Get.delete<String>(tag: "gameId", force: true);
-    Get.to(() => const PlaylistPage());
+    Get.to(() =>
+        Get.find<bool>(tag: "isMaster") ? const PlaylistPage() : const Home());
   }
 
   @override
   Widget build(BuildContext context) {
     bool showInfos = Get.find(tag: "showInfos");
     bool isMaster = Get.find<bool>(tag: "isMaster");
-    Track currentTrack = playlist.tracks[player.currentIndex ?? 0];
+    Track? currentTrack =
+        isMaster ? playlist!.tracks[player.currentIndex ?? 0] : null;
     isPlaying = player.playing;
-    setDuration();
+    if (isMaster) {
+      setDuration(game);
+    }
 
     return WillPopScope(
       onWillPop: _onBackPressed,
@@ -138,8 +173,7 @@ class _GamePageState extends State<GamePage> {
               stream: firestoreManager.getGame(),
               builder: ((context, snapshot) {
                 if (snapshot.hasData) {
-                  Game game = snapshot.data!;
-
+                  game = snapshot.data!;
                   return SizedBox(
                     height: MediaQuery.of(context).size.height,
                     width: MediaQuery.of(context).size.width,
@@ -150,60 +184,40 @@ class _GamePageState extends State<GamePage> {
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                           showInfos && isMaster
-                              ? TrackInfos(currentTrack: currentTrack)
+                              ? TrackInfos(currentTrack: currentTrack!)
                               : Text("A vous de deviner !",
                                   style: Theme.of(context).textTheme.headline5),
                           Text("Chansons restantes : ${game.remainingSongs}"),
                           Player(
                               isMaster: isMaster,
-                              currentPosition: currentPosition,
-                              duration: duration,
+                              currentPosition:
+                                  isMaster ? currentPosition : game.position,
+                              duration:
+                                  isMaster ? totalDuration : game.totalDuration,
                               onChangedSlider: (value) {
                                 if (isMaster) {
                                   player.seek(Duration(
-                                      seconds: (duration!.inSeconds * value)
+                                      seconds: (totalDuration.inSeconds * value)
                                           .toInt()));
                                 }
                               },
                               onPressedIcon: () {
-                                isPlaying ? player.pause() : player.play();
+                                if (isPlaying) {
+                                  player.pause();
+                                  subscriptionPosition.pause();
+                                } else {
+                                  player.play();
+                                  subscriptionPosition.resume();
+                                }
                                 setState(() {
                                   isPlaying = !isPlaying;
                                 });
                               },
                               isPlaying: isPlaying),
                           if (isMaster)
-                            Wrap(
-                              alignment: WrapAlignment.center,
-                              spacing: 10,
-                              runSpacing: 10,
-                              children: [
-                                ElevatedButton(
-                                    onPressed: () async {
-                                      player.pause();
-                                      player.play();
-                                    },
-                                    child: const Text("Artiste trouvé")),
-                                ElevatedButton(
-                                    onPressed: () async {
-                                      player.pause();
-                                      player.play();
-                                    },
-                                    child: const Text("Titre trouvé")),
-                                ElevatedButton(
-                                    onPressed: () async {
-                                      showScores();
-                                    },
-                                    child: const Text("Tout trouvé")),
-                                ElevatedButton(
-                                    onPressed: () async {
-                                      showScores();
-                                      firestoreManager.updateRemainingSongs(
-                                          game.remainingSongs - 1);
-                                    },
-                                    child: const Text("Prochain morceau")),
-                              ],
-                            )
+                            BtnBar(
+                                player: player,
+                                showScores: () => showScores(game))
                         ],
                       ),
                     ),

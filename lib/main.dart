@@ -23,6 +23,8 @@ Future<void> main() async {
   final themeJson = jsonDecode(themeStr);
   final theme = ThemeDecoder.decodeThemeData(themeJson)!;
   await dotenv.load(fileName: ".env");
+  Get.put(true, tag: "showInfos");
+  Get.put(false, tag: "selectTracks");
 
   runApp(MyApp(theme: theme));
 }

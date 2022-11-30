@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:spotiblind/views/commons/widgets.dart';
 import 'package:spotiblind/views/splash_view.dart';
 
 import '../../models/user.dart';
+import '../dialog_code/code_form.dart';
 import '../home_master/home_master.dart';
 
 class Home extends StatelessWidget {
@@ -18,7 +18,7 @@ class Home extends StatelessWidget {
           const Text("Bienvenue sur Spotiblind !"),
           ElevatedButton(
               onPressed: () {
-                Get.put<bool>(true, tag: "isMaster");
+                Get.replace<bool>(true, tag: "isMaster");
                 Get.off(() =>
                     Get.find<User>(tag: "currentUser").displayName != ''
                         ? const HomeMaster()
@@ -27,7 +27,7 @@ class Home extends StatelessWidget {
               child: const Text("Créer une partie")),
           ElevatedButton(
               onPressed: () {
-                Get.put<bool>(false, tag: "isMaster");
+                Get.replace<bool>(false, tag: "isMaster");
                 Get.defaultDialog(
                     title: "Entrez le code", content: const CodeForm());
               },

@@ -25,14 +25,33 @@ class Game {
     this.started = false,
   });
 
-  static Future<void> createInFirestore(
+  static Future<bool> createInFirestore(
       int totalSongs, String entrycode) async {
     final game = Game(
         entryCode: entrycode,
         remainingSongs: totalSongs,
         totalSongs: totalSongs);
     final doc = await FirestoreManager.createGame(game);
-    Get.put<String>(doc.id, tag: "gameId");
+    if (doc != null) {
+      Get.put<String>(doc.id, tag: "gameId");
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  static Future<bool> searchInFirestore(String entrycode) async {
+    final games = await FirebaseFirestore.instance
+        .collection("games")
+        .where("entry_code", isEqualTo: entrycode)
+        .get();
+    if (games.docs.isEmpty) {
+      return false;
+    } else {
+      final String id = games.docs.first.id;
+      Get.put<String>(id, tag: "gameId");
+      return true;
+    }
   }
 
   Map<String, dynamic> toJson() {

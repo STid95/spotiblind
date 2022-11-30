@@ -48,8 +48,6 @@ class _PlaylistPageState extends State<PlaylistPage> {
     playlists = Get.find(tag: "playlists");
     offset = playlists.length;
     filteredPlaylists = List.from(playlists);
-    Get.put(showInfos, tag: "showInfos");
-    Get.put(selectTracks, tag: "selectTracks");
   }
 
   @override
